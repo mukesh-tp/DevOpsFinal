@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Welcome to the <span id="color"></span> Environment</h1>
+<script>
+  document.getElementById("color").textContent = 
+    window.location.port == 8081 ? "Blue" : "Green";
+</script>
+</body>
+</html>
+
