@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue-Green Deployment</title>
+</head>
 <body>
-<h1>Welcome to the <span id="color"></span> Environment</h1>
-<script>
-  document.getElementById("color").textContent = 
-    window.location.port == 8081 ? "Blue" : "Green";
-</script>
+<h1 id="app">Welcome to the Blue Environment!</h1>
 </body>
 </html>
 

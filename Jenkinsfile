@@ -1,40 +1,55 @@
 pipeline {
     agent any
     environment {
-        ACTIVE_ENV = 'blue' // Set to 'green' initially if needed
+        DOCKER_IMAGE = 'blue-green-app'
+        BLUE_PORT = '8081'
+        GREEN_PORT = '8082'
+        SWITCH = 'blue' // Default deployment environment
     }
     stages {
-        stage('Checkout Code') {
+        stage('Clone Repository') {
             steps {
-                git branch: 'master', url: 'https://github.com/mukesh-tp/DevOpsFinal.git'
+                git 'https://github.com/mukesh-tp/DevOpsFinal.git'
             }
         }
-        stage('Deploy to Blue') {
-            when {
-                expression { env.ACTIVE_ENV == 'green' }
-            }
+        stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker-compose up -d blue'
+                    sh 'docker build -t ${DOCKER_IMAGE} .'
                 }
             }
         }
-        stage('Deploy to Green') {
-            when {
-                expression { env.ACTIVE_ENV == 'blue' }
-            }
+        stage('Deploy to Blue/Green') {
             steps {
                 script {
-                    sh 'docker-compose up -d green'
+                    // Check which environment is running
+                    def blue_status = sh(script: "./health_check.sh | grep 'Blue is healthy'", returnStatus: true)
+                    def green_status = sh(script: "./health_check.sh | grep 'Green is healthy'", returnStatus: true)
+
+                    // Determine which environment to deploy to
+                    if (green_status == 0) {
+                        SWITCH = 'blue'
+                    } else if (blue_status == 0) {
+                        SWITCH = 'green'
+                    }
+                    
+                    echo "Deploying to ${SWITCH} environment"
+                    
+                    // Deploy to Blue or Green
+                    if (SWITCH == 'blue') {
+                        sh 'docker-compose up -d blue'
+                    } else {
+                        sh 'docker-compose up -d green'
+                    }
                 }
             }
         }
         stage('Health Check') {
             steps {
                 script {
-                    def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:8083", returnStdout: true)
-                    if (response != '200') {
-                        error('Health check failed.')
+                    def check = sh(script: "./health_check.sh", returnStatus: true)
+                    if (check != 0) {
+                        error("Deployment failed during health check.")
                     }
                 }
             }
@@ -42,22 +57,22 @@ pipeline {
         stage('Switch Traffic') {
             steps {
                 script {
-                    def newEnv = env.ACTIVE_ENV == 'blue' ? 'green' : 'blue'
-                    env.ACTIVE_ENV = newEnv
-                    echo "Traffic switched to ${newEnv} environment."
+                    // Direct traffic to the new environment
+                    if (SWITCH == 'blue') {
+                        sh 'docker stop green_app || true'
+                        echo 'Switched traffic to Blue environment'
+                    } else {
+                        sh 'docker stop blue_app || true'
+                        echo 'Switched traffic to Green environment'
+                    }
                 }
             }
         }
     }
     post {
-        success {
-            script {
-                sh 'docker-compose down'
-                sh "docker-compose up -d ${env.ACTIVE_ENV}"
-            }
-        }
-        failure {
-            echo 'Deployment failed. Reverting to the previous environment.'
+        always {
+            echo "Cleaning up old containers"
+            sh 'docker system prune -f'
         }
     }
 }

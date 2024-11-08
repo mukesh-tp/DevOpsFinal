@@ -2,21 +2,12 @@ version: '3'
 services:
   blue:
     build: .
-    container_name: myapp_blue
+    container_name: blue_app
     ports:
       - "8081:80"
-    volumes:
-      - ./html/blue:/usr/share/nginx/html
-    environment:
-      - ENV=BLUE
-
   green:
     build: .
-    container_name: myapp_green
+    container_name: green_app
     ports:
       - "8082:80"
-    volumes:
-      - ./html/green:/usr/share/nginx/html
-    environment:
-      - ENV=GREEN
 
