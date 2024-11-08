@@ -4,10 +4,19 @@ pipeline {
         BLUE_PORT = '8081'
         GREEN_PORT = '8082'
         CURRENT_ENV = sh(script: "curl -s http://localhost:80 | grep -o 'Blue\\|Green'", returnStdout: true).trim()
-        NEW_ENV = CURRENT_ENV == 'Blue' ? 'green-app' : 'blue-app'
-        NEW_PORT = CURRENT_ENV == 'Blue' ? GREEN_PORT : BLUE_PORT
     }
     stages {
+        stage('Determine Target Environment') {
+            steps {
+                script {
+                    // Define NEW_ENV and NEW_PORT inside a script block
+                    def newEnv = CURRENT_ENV == 'Blue' ? 'green-app' : 'blue-app'
+                    def newPort = CURRENT_ENV == 'Blue' ? GREEN_PORT : BLUE_PORT
+                    env.NEW_ENV = newEnv
+                    env.NEW_PORT = newPort
+                }
+            }
+        }
         stage('Pull Latest Code') {
             steps {
                 git 'https://github.com/mukesh-tp/DevOpsFinal.git'
@@ -21,7 +30,7 @@ pipeline {
         stage('Health Check') {
             steps {
                 script {
-                    def statusCode = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:${NEW_PORT}", returnStdout: true).trim()
+                    def statusCode = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:${env.NEW_PORT}", returnStdout: true).trim()
                     if (statusCode != "200") {
                         error("Health check failed, deployment aborted!")
                     }
@@ -42,7 +51,7 @@ pipeline {
         }
         stage('Clean Old Environment') {
             steps {
-                sh "docker-compose down ${CURRENT_ENV}"
+                sh "docker-compose down ${CURRENT_ENV.toLowerCase()}-app"
             }
         }
     }
