@@ -15,7 +15,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh 'docker-compose up -d blue'
+                    sh 'sudo docker-compose up -d blue'
                 }
             }
         }
@@ -25,7 +25,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh 'docker-compose up -d green'
+                    sh 'sudo docker-compose up -d green'
                 }
             }
         }
@@ -52,8 +52,8 @@ pipeline {
     post {
         success {
             script {
-                sh 'docker-compose down'
-                sh "docker-compose up -d ${env.ACTIVE_ENV}"
+                sh 'sudo docker-compose down'
+                sh "sudo docker-compose up -d ${env.ACTIVE_ENV}"
             }
         }
         failure {
