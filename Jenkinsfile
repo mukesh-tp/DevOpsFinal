@@ -3,7 +3,7 @@ pipeline {
     environment {
         BLUE_PORT = '8081'
         GREEN_PORT = '8082'
-        CURRENT_ENV = sh(script: "curl -s http://localhost:80 | grep -o 'Blue\\|Green'", returnStdout: true).trim()
+        CURRENT_ENV = sh(script: "curl -s http://localhost:8083 | grep -o 'Blue\\|Green'", returnStdout: true).trim()
     }
     stages {
         stage('Determine Target Environment') {
