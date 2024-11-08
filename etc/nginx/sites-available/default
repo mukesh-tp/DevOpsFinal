@@ -1,5 +1,5 @@
 server {
-    listen 80;
+    listen 8083;
     location / {
         proxy_pass http://localhost:8081;
         proxy_set_header Host $host;
